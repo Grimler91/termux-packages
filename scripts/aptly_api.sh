@@ -7,7 +7,7 @@ CURL_COMMON_OPTIONS=(
   --retry 2
   --retry-delay 3
   --user-agent 'Termux-Packages/1.0\ (https://github.com/termux/termux-packages)'
-  --user ${{ secrets.APTLY_API_AUTH }}
+  --user ${APTLY_API_AUTH}
   --write-out "|%{http_code}"
 )
 # Function for deleting temporary directory with uploaded files from
