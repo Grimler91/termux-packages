@@ -183,14 +183,14 @@ jobs:
         REPOSITORY_DISTRIBUTION: stable
         REPOSITORY_URL: https://packages-cf.termux.org/aptly-api
       run: |
+        GITHUB_SHA=${{ github.sha }}
+        APTLY_API_AUTH=${{ secrets.APTLY_API_AUTH }}
+
         source scripts/aptly_api.sh
 
         for archive in termux-packages-*/*.tar; do
           tar xf "$archive"
         done
-
-        GITHUB_SHA=${{ github.sha }}
-        APTLY_API_AUTH=${{ secrets.APTLY_API_AUTH }}
 
         # Upload file to temporary directory.
         uploaded_files=false
@@ -225,14 +225,14 @@ jobs:
         REPOSITORY_DISTRIBUTION: stable
         REPOSITORY_URL: https://aptly-api.grimler.se
       run: |
+        GITHUB_SHA=${{ github.sha }}
+        APTLY_API_AUTH=${{ secrets.APTLY_API_AUTH }}
+
         source scripts/aptly_api.sh
 
         for archive in termux-packages-*/*.tar; do
           tar xf "$archive"
         done
-
-        GITHUB_SHA=${{ github.sha }}
-        APTLY_API_AUTH=${{ secrets.APTLY_API_AUTH }}
 
         # Upload file to temporary directory.
         uploaded_files=false
