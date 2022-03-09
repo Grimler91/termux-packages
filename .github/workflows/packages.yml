@@ -179,7 +179,7 @@ jobs:
         path: ./
     - name: Upload to packages.termux.org
       env:
-        REPOSITORY_NAME: termux-main
+        REPOSITORY_NAME: termux-test
         REPOSITORY_DISTRIBUTION: stable
         REPOSITORY_URL: https://packages-cf.termux.org/aptly-api
       run: |
@@ -221,7 +221,7 @@ jobs:
       # Run even if upload to packages.termux.org failed:
       if: always()
       env:
-        REPOSITORY_NAME: termux-main
+        REPOSITORY_NAME: termux-test
         REPOSITORY_DISTRIBUTION: stable
         REPOSITORY_URL: https://aptly-api.grimler.se
       run: |
