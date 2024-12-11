@@ -11,7 +11,7 @@ TERMUX_PKG_AUTO_UPDATE=false
 TERMUX_PKG_CONFLICTS="libandroid"
 TERMUX_PKG_REPLACES="libandroid"
 TERMUX_PKG_BUILD_IN_SRC=true
-
+# foobar
 termux_step_get_source() {
 	mkdir -p "$TERMUX_PKG_SRCDIR"
 	if [ "$TERMUX_ON_DEVICE_BUILD" = "true" ]; then
