@@ -275,7 +275,7 @@ jobs:
     concurrency: ${{ github.workflow }}
     permissions:
       contents: read
-    if: github.repository == 'termux/termux-packages'
+    if: github.repository == 'grimler91/termux-packages'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -319,7 +319,7 @@ jobs:
             if [ ! -f "Packages-${repo}-${arch}" ]; then
               echo "[*] Downloading ${url}/dists/${distribution}/${component}/binary-${arch}/Packages.bz2"
               curl -s \
-                --user-agent 'Termux-Packages/1.0\ (https://github.com/termux/termux-packages)' \
+                --user-agent 'Termux-Packages/1.0\ (https://github.com/grimler91/termux-packages)' \
                 "${url}/dists/${distribution}/${component}/binary-${arch}/Packages.bz2" \
                 -o "Packages-${repo}-${arch}.bz2"
               7z x "Packages-${repo}-${arch}.bz2" > /dev/null

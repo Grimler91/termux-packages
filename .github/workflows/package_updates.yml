@@ -130,7 +130,7 @@ jobs:
     permissions:
       issues: write
       contents: write
-    if: github.event_name != 'pull_request' && github.event_name != 'push' && github.repository == 'termux/termux-packages'
+    if: github.event_name != 'pull_request' && github.event_name != 'push' && github.repository == 'grimler91/termux-packages'
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
