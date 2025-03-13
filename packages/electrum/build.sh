@@ -21,6 +21,10 @@ TERMUX_PKG_CONFLICTS="asciinema (<< 1.4.0-1)"
 TERMUX_PKG_PYTHON_COMMON_DEPS="wheel"
 TERMUX_PKG_SERVICE_SCRIPT=("electrum" 'exec electrum daemon 2>&1')
 
+termux_step_post_massage() {
+	ln -s $TERMUX_PREFIX/lib/libsecp256k1.so lib/python3.12/site-packages/electrum/libsecp256k1.so.0
+}
+
 termux_step_create_debscripts() {
 	cat <<- EOF > ./postinst
 	#!$TERMUX_PREFIX/bin/sh
