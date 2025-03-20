@@ -1,0 +1,33 @@
+From b8ba944a1aaaa0b94d2b6db604b2b3480dc6f29b Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Mon, 17 Mar 2025 07:13:54 +0100
+Subject: [PATCH] Include sys/endian.h in termux and arpa/inet.h on other
+ systems
+
+endian.h and inet.h contains the definition for htons. Include the
+necessary header so that termux-api can be built in either system
+type.
+---
+ termux-api.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/termux-api.c b/termux-api.c
+index 3cfda8bb1bef..9144b66afb86 100644
+--- a/termux-api.c
++++ b/termux-api.c
+@@ -8,7 +8,11 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <sys/endian.h>
++#ifdef __TERMUX
++# include <sys/endian.h>
++#else
++# include <arpa/inet.h>
++#endif
+ #include <sys/socket.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+-- 
+2.49.0
+

@@ -1,0 +1,68 @@
+From 0931dd2aacf329b99ba4314fea17162512cedb0c Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Tue, 18 Mar 2025 13:01:31 +0100
+Subject: [PATCH] usb: test: add small minimal-enumerate program
+
+Can be used to test termux-usb for memory leaks or other issues.
+---
+ usb/CMakeLists.txt           |  7 +++++++
+ usb/test/minimal-enumerate.c | 32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
+ create mode 100644 usb/test/minimal-enumerate.c
+
+diff --git a/usb/CMakeLists.txt b/usb/CMakeLists.txt
+index d9d61419e7ea..f12bebac2d50 100644
+--- a/usb/CMakeLists.txt
++++ b/usb/CMakeLists.txt
+@@ -31,3 +31,10 @@ install(
+   FILES ${CMAKE_CURRENT_SOURCE_DIR}/termux-usb.h
+   TYPE INCLUDE
+ )
++
++add_executable(minimal-enumerate test/minimal-enumerate.c termux-usb.h)
++target_include_directories(
++  minimal-enumerate
++  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
++)
++target_link_libraries(minimal-enumerate PUBLIC termux-usb ${Protobuf_LIBRARIES})
+diff --git a/usb/test/minimal-enumerate.c b/usb/test/minimal-enumerate.c
+new file mode 100644
+index 000000000000..b24d57778093
+--- /dev/null
++++ b/usb/test/minimal-enumerate.c
+@@ -0,0 +1,32 @@
++#include <stdio.h>
++
++#include "termux-usb.h"
++
++int main() {
++	struct termux_usb_device **devices;
++	struct termux_usb_device *device;
++	ssize_t num_devs;
++	int i = 0;
++
++	num_devs = termux_usb_get_device_list(&devices);
++	if (num_devs < 0)
++		return 0;
++	while ((device = devices[i++]) != NULL) {
++		struct libusb_device_descriptor desc;
++		struct termux_usb_config_descriptor *conf_desc = NULL;
++		int j;
++		printf("device %s\n", device->device_address);
++
++		termux_usb_get_config_descriptor(device, 0, &conf_desc);
++		if (conf_desc) {
++			for (j = 0; j < conf_desc->bNumInterfaces; j++) {
++				const struct termux_usb_interface_descriptor *intf_desc = &conf_desc->interface[j];
++				if (intf_desc->bInterfaceClass == LIBUSB_CLASS_HID) {
++					printf("Found HID device\n");
++				}
++			}
++		}
++		termux_usb_free_config_descriptor(conf_desc);
++	}
++	termux_usb_free_device_list(devices);
++}
+-- 
+2.49.0
+

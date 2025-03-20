@@ -1,0 +1,34 @@
+From 309bea399dfa2f92abc35703585e338dca596f08 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Wed, 26 Mar 2025 16:58:54 +0100
+Subject: [PATCH] termux-api: we only need 14 extra args for child_argv
+
+We need one extra spot for NULL terminator, but we already skip
+memcpy'ing argv[0] (the program name), so we already have an extra
+spot at our disposal.
+
+If we use extra_args=15 then array will end with two NULLs, or (if
+argv was not already null terminated), uninitialised memory and one
+NULL.
+
+Fixes: 1ec1334b54e0 ("Initial push")
+---
+ termux-api.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/termux-api.c b/termux-api.c
+index 018acbdc86e6..6d3673155c53 100644
+--- a/termux-api.c
++++ b/termux-api.c
+@@ -250,7 +250,7 @@ _Noreturn void exec_am_broadcast(int argc, char** argv,
+     // Close stdin:
+     close(STDIN_FILENO);
+ 
+-    int const extra_args = 15; // Including ending NULL.
++    int const extra_args = 14; // Including ending NULL.
+     char** child_argv = malloc((sizeof(char*)) * (argc + extra_args));
+     if (!child_argv) {
+         perror("malloc failed");
+-- 
+2.49.0
+

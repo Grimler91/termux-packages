@@ -1,0 +1,31 @@
+From 501c4223ec84311fea0cb6d592a91c9943cef7ca Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Tue, 25 Mar 2025 22:06:14 +0100
+Subject: [PATCH] usb: do not return early if no devices are found
+
+Even if zero devices are found we need to NULL terminate the device
+list, as many programs iterate over the device list until NULL is
+found.
+---
+ usb/termux-usb.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/usb/termux-usb.c b/usb/termux-usb.c
+index 059950a3a179..4c55e2ae5032 100644
+--- a/usb/termux-usb.c
++++ b/usb/termux-usb.c
+@@ -53,11 +53,6 @@ ssize_t termux_usb_get_device_list(struct termux_usb_device ***list)
+ 		return -1;
+ 	}
+ 
+-	if (container->n_device == 0) {
+-		usbapi__termux_usb__free_unpacked(container, NULL);
+-		return 0;
+-	}
+-
+ 	ret = (struct termux_usb_device **) calloc(container->n_device + 1, sizeof(struct termux_usb_device *));
+ 	if (!ret) {
+ 		fprintf(stderr, "Failed to allocate memory\n");
+-- 
+2.49.0
+

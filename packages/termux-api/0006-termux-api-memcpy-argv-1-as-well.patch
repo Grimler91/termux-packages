@@ -1,0 +1,33 @@
+From af865a2833336a7321496bf9ca40d9c3a8420454 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Wed, 26 Mar 2025 17:40:47 +0100
+Subject: [PATCH] termux-api: memcpy argv[1] as well
+
+By adding it to the memcpy command instead of manually setting
+child_argv[14]=argv[1] it becomes easier to see why extra_args should
+be equal to 14 and not 15. I.e. we set extra_args=14 and then set
+child_argv[0], child_argv[1], ..., child_argv[13].
+---
+ termux-api.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/termux-api.c b/termux-api.c
+index 300c2a4e7d61..0d4d586f2173 100644
+--- a/termux-api.c
++++ b/termux-api.c
+@@ -272,10 +272,9 @@ _Noreturn void exec_am_broadcast(int argc, char** argv,
+     child_argv[11] = input_address_string;
+     child_argv[12] = "--es";
+     child_argv[13] = "api_method";
+-    child_argv[14] = argv[1];
+ 
+-    // Copy the remaining arguments -2 for first binary and second api name:
+-    memcpy(child_argv + extra_args, argv + 2, (argc-2) * sizeof(char*));
++    // Copy all arguments except first one (progname)
++    memcpy(child_argv + extra_args, argv + 1, (argc-1) * sizeof(char*));
+ 
+     // End with NULL:
+     child_argv[argc + extra_args - 1] = NULL;
+-- 
+2.49.0
+

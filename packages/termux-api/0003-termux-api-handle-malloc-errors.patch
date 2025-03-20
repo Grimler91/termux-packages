@@ -1,0 +1,29 @@
+From dfc7085564e05def8db45140479ef8574b0096f4 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Wed, 26 Mar 2025 16:51:36 +0100
+Subject: [PATCH] termux-api: handle malloc errors
+
+malloc might fail to allocate memory for child_argv. Ensure it was
+successfully allocated before trying to set its elements.
+---
+ termux-api.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/termux-api.c b/termux-api.c
+index 0b9c9d751653..018acbdc86e6 100644
+--- a/termux-api.c
++++ b/termux-api.c
+@@ -252,6 +252,10 @@ _Noreturn void exec_am_broadcast(int argc, char** argv,
+ 
+     int const extra_args = 15; // Including ending NULL.
+     char** child_argv = malloc((sizeof(char*)) * (argc + extra_args));
++    if (!child_argv) {
++        perror("malloc failed");
++        exit(1);
++    }
+ 
+     child_argv[0] = "am";
+     child_argv[1] = "broadcast";
+-- 
+2.49.0
+

@@ -1,0 +1,264 @@
+From e42a68004f511b28fea50c7888f4d6e384e6d4e6 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Sun, 23 Mar 2025 13:08:30 +0100
+Subject: [PATCH] usb: test: add termux-api-mock-usb program
+
+It simulates termux-api responses. By adjusting the popen paths in
+termux-usb.c one can use this program instead, and thereby test
+termux-usb without the termux-api app.
+---
+ usb/CMakeLists.txt               |  17 +++
+ usb/test/termux-api-mock-usb.cpp | 216 +++++++++++++++++++++++++++++++
+ 2 files changed, 233 insertions(+)
+ create mode 100644 usb/test/termux-api-mock-usb.cpp
+
+diff --git a/usb/CMakeLists.txt b/usb/CMakeLists.txt
+index f12bebac2d50..beabca8a6752 100644
+--- a/usb/CMakeLists.txt
++++ b/usb/CMakeLists.txt
+@@ -38,3 +38,20 @@ target_include_directories(
+   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+ )
+ target_link_libraries(minimal-enumerate PUBLIC termux-usb ${Protobuf_LIBRARIES})
++
++protobuf_generate(
++  LANGUAGE CPP
++  GENERATE_EXTENSIONS .pb.cc
++  OUT_VAR PROTO_CPP_SRCS
++  PROTOS proto/UsbAPI.proto
++)
++add_executable(termux-api-mock-usb test/termux-api-mock-usb.cpp ${PROTO_CPP_SRCS} ${PROTO_CPP_HDRS})
++target_include_directories(
++  termux-api-mock-usb
++  PUBLIC ${PROTOBUF_INCLUDE_DIRS}
++  PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/proto
++)
++# Linking against ${Protobuf_LIBRARIES} below instead of
++# protobuf::libprotobuf fails to compile with lots of undefined symbol
++# errors, while protobuf::libprotobuf succeeds for whatever reason.
++target_link_libraries(termux-api-mock-usb PRIVATE protobuf::libprotobuf)
+diff --git a/usb/test/termux-api-mock-usb.cpp b/usb/test/termux-api-mock-usb.cpp
+new file mode 100644
+index 000000000000..204a02a415ad
+--- /dev/null
++++ b/usb/test/termux-api-mock-usb.cpp
+@@ -0,0 +1,216 @@
++#include <iostream>
++#include <string>
++#include "UsbAPI.pb.h"
++
++void write_devices() {
++	usbapi::termuxUsb message;
++
++	usbapi::termuxUsbDevice *device1 = message.add_device();
++	device1->set_busnumber(17);
++	device1->set_portnumber(1);
++	device1->set_deviceaddress("/dev/bus/usb/001/017");
++	usbapi::termuxUsbDeviceDescriptor *device_descriptor1 = new usbapi::termuxUsbDeviceDescriptor();
++	device_descriptor1->set_configurationcount(1);
++	device_descriptor1->set_manufacturername("Ledger");
++	device_descriptor1->set_productid(20480);
++	device_descriptor1->set_productname("Nano S Plus");
++	device_descriptor1->set_serialnumber("004A");
++	device_descriptor1->set_vendorid(11415);
++	device1->set_allocated_device(device_descriptor1);
++
++	usbapi::termuxUsbDevice *device2 = message.add_device();
++	device2->set_busnumber(13);
++	device2->set_portnumber(1);
++	device2->set_deviceaddress("/dev/bus/usb/001/013");
++	usbapi::termuxUsbDeviceDescriptor *device_descriptor2 = new usbapi::termuxUsbDeviceDescriptor();
++	device_descriptor2->set_configurationcount(1);
++	device_descriptor2->set_manufacturername("Yubico");
++	device_descriptor2->set_productid(278);
++	device_descriptor2->set_productname("Yubikey NEO OTP+U2F+CCID");
++	device_descriptor2->set_vendorid(4176);
++	device2->set_allocated_device(device_descriptor2);
++
++	usbapi::termuxUsbDevice *device3 = message.add_device();
++	device3->set_busnumber(4);
++	device3->set_portnumber(1);
++	device3->set_deviceaddress("/dev/bus/usb/001/004");
++	usbapi::termuxUsbDeviceDescriptor *device_descriptor3 = new usbapi::termuxUsbDeviceDescriptor();
++	device_descriptor3->set_configurationcount(1);
++	device_descriptor3->set_manufacturername("Purism, SPC");
++	device_descriptor3->set_productid(19531);
++	device_descriptor3->set_productname("Librem Key");
++	device_descriptor3->set_serialnumber("D6G9");
++	device_descriptor3->set_vendorid(12653);
++	device3->set_allocated_device(device_descriptor3);
++
++	usbapi::termuxUsbDevice *device4 = message.add_device();
++	device4->set_busnumber(9);
++	device4->set_portnumber(1);
++	device4->set_deviceaddress("/dev/bus/usb/001/009");
++	usbapi::termuxUsbDeviceDescriptor *device_descriptor4 = new usbapi::termuxUsbDeviceDescriptor();
++	device_descriptor4->set_configurationcount(1);
++	device_descriptor4->set_manufacturername("Prolific Technology Inc.");
++	device_descriptor4->set_productid(8963);
++	device_descriptor4->set_productname("USB-Serial Controller");
++	device_descriptor4->set_vendorid(1659);
++	device4->set_allocated_device(device_descriptor4);
++
++	std::string serialized_data;
++
++	message.SerializeToString(&serialized_data);
++
++	std::cout << serialized_data;
++}
++
++void write_configs(char *dev_path) {
++	if (strncmp(dev_path, "/dev/bus/usb/001/017", 20) == 0) {
++		usbapi::termuxUsbConfigDescriptor message;
++		message.set_configuration("Nano S Plus");
++		message.set_maxpower(100);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf1 = message.add_interface();
++		intf1->set_interface("Nano S Plus");
++		intf1->set_interfaceclass(3);
++		usbapi::termuxUsbEndpointDescriptor *endpoint11 = intf1->add_endpoint();
++		endpoint11->set_attributes(3);
++		endpoint11->set_endpointaddress(130);
++		endpoint11->set_interval(1);
++		endpoint11->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint12 = intf1->add_endpoint();
++		endpoint12->set_attributes(3);
++		endpoint12->set_endpointaddress(2);
++		endpoint12->set_interval(1);
++		endpoint12->set_maxpacketsize(64);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf2 = message.add_interface();
++		intf2->set_interface("Nano S Plus");
++		intf2->set_interfaceclass(255);
++		intf2->set_interfaceprotocol(255);
++		intf2->set_interfacesubclass(255);
++		usbapi::termuxUsbEndpointDescriptor *endpoint21 = intf2->add_endpoint();
++		endpoint21->set_attributes(3);
++		endpoint21->set_endpointaddress(131);
++		endpoint21->set_interval(1);
++		endpoint21->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint22 = intf2->add_endpoint();
++		endpoint22->set_attributes(3);
++		endpoint22->set_endpointaddress(2);
++		endpoint22->set_interval(1);
++		endpoint22->set_maxpacketsize(64);
++
++		std::string serialized_data;
++		message.SerializeToString(&serialized_data);
++		std::cout << serialized_data;
++	} else if (strncmp(dev_path, "/dev/bus/usb/001/013", 20) == 0) {
++		/* yubikey */
++		usbapi::termuxUsbConfigDescriptor message;
++		message.set_maxpower(30);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf1 = message.add_interface();
++		intf1->set_interfaceclass(3);
++		intf1->set_interfaceprotocol(1);
++		intf1->set_interfacesubclass(1);
++		usbapi::termuxUsbEndpointDescriptor *endpoint11 = intf1->add_endpoint();
++		endpoint11->set_attributes(3);
++		endpoint11->set_endpointaddress(129);
++		endpoint11->set_interval(10);
++		endpoint11->set_maxpacketsize(8);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf2 = message.add_interface();
++		intf2->set_interfaceclass(3);
++		usbapi::termuxUsbEndpointDescriptor *endpoint21 = intf2->add_endpoint();
++		endpoint21->set_attributes(3);
++		endpoint21->set_endpointaddress(4);
++		endpoint21->set_interval(2);
++		endpoint21->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint22 = intf2->add_endpoint();
++		endpoint22->set_attributes(3);
++		endpoint22->set_endpointaddress(132);
++		endpoint22->set_interval(2);
++		endpoint22->set_maxpacketsize(64);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf3 = message.add_interface();
++		intf3->set_interfaceclass(11);
++		usbapi::termuxUsbEndpointDescriptor *endpoint31 = intf3->add_endpoint();
++		endpoint31->set_attributes(2);
++		endpoint31->set_endpointaddress(2);
++		endpoint31->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint32 = intf3->add_endpoint();
++		endpoint32->set_attributes(3);
++		endpoint32->set_endpointaddress(130);
++		endpoint32->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint33 = intf3->add_endpoint();
++		endpoint33->set_attributes(3);
++		endpoint33->set_endpointaddress(131);
++		endpoint33->set_interval(32);
++		endpoint33->set_maxpacketsize(8);
++
++		std::string serialized_data;
++		message.SerializeToString(&serialized_data);
++		std::cout << serialized_data;
++	} else if (strncmp(dev_path, "/dev/bus/usb/001/004", 20) == 0) {
++		usbapi::termuxUsbConfigDescriptor message;
++		message.set_maxpower(100);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf1 = message.add_interface();
++		intf1->set_interfaceclass(3);
++		usbapi::termuxUsbEndpointDescriptor *endpoint11 = intf1->add_endpoint();
++		endpoint11->set_attributes(3);
++		endpoint11->set_endpointaddress(132);
++		endpoint11->set_interval(10);
++		endpoint11->set_maxpacketsize(8);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf2 = message.add_interface();
++		intf2->set_interfaceclass(11);
++		usbapi::termuxUsbEndpointDescriptor *endpoint21 = intf2->add_endpoint();
++		endpoint21->set_attributes(3);
++		endpoint21->set_endpointaddress(129);
++		endpoint21->set_interval(24);
++		endpoint21->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint22 = intf2->add_endpoint();
++		endpoint22->set_attributes(2);
++		endpoint22->set_endpointaddress(2);
++		endpoint22->set_maxpacketsize(64);
++		usbapi::termuxUsbEndpointDescriptor *endpoint23 = intf2->add_endpoint();
++		endpoint23->set_attributes(2);
++		endpoint23->set_endpointaddress(130);
++		endpoint23->set_maxpacketsize(64);
++
++		std::string serialized_data;
++		message.SerializeToString(&serialized_data);
++		std::cout << serialized_data;
++	} else if (strncmp(dev_path, "/dev/bus/usb/001/009", 20) == 0) {
++		usbapi::termuxUsbConfigDescriptor message;
++		message.set_maxpower(300);
++
++		usbapi::termuxUsbInterfaceDescriptor *intf1 = message.add_interface();
++		intf1->set_interfaceclass(8);
++		intf1->set_interfaceprotocol(80);
++		intf1->set_interfacesubclass(6);
++		usbapi::termuxUsbEndpointDescriptor *endpoint11 = intf1->add_endpoint();
++		endpoint11->set_attributes(2);
++		endpoint11->set_endpointaddress(129);
++		endpoint11->set_maxpacketsize(512);
++		usbapi::termuxUsbEndpointDescriptor *endpoint12 = intf1->add_endpoint();
++		endpoint12->set_attributes(2);
++		endpoint12->set_endpointaddress(2);
++		endpoint12->set_maxpacketsize(512);
++
++		std::string serialized_data;
++		message.SerializeToString(&serialized_data);
++		std::cout << serialized_data;
++	} else
++		std::cerr << "Error: in write_configs, unknown device" << dev_path << std::endl;
++}
++
++int main(int argc, char *argv[]) {
++	if (argc > 2 && strncmp(argv[3], "getDevices", 10) == 0)
++		write_devices();
++	else if (argc > 5 && strncmp(argv[3], "getConfigDescriptor", 10) == 0)
++		write_configs(argv[6]);
++	else if (argc > 2)
++		std::cerr << "Unknown command " << argv[3] << std::endl;
++	else
++		std::cerr << "No command given" << std::endl;
++	return 0;
++}
+-- 
+2.49.0
+

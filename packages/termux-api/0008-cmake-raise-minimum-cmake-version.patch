@@ -1,0 +1,23 @@
+From 580d91a0c416232d1870db786968ed5712151817 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Mon, 17 Mar 2025 07:13:04 +0100
+Subject: [PATCH] cmake: raise minimum cmake version
+
+To silence deprecation warning.
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 00f18a567e64..522a161f24e4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.0.0)
++cmake_minimum_required(VERSION 3.10.0)
+ project(termux-api)
+ include(GNUInstallDirs)
+ 
+-- 
+2.49.0
+

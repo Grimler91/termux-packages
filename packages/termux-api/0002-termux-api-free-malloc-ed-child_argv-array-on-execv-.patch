@@ -1,0 +1,27 @@
+From e739f176d3b32e3a735de3a25c6b8476dd82cda8 Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Wed, 26 Mar 2025 16:49:19 +0100
+Subject: [PATCH] termux-api: free malloc'ed child_argv array on execv error
+
+We exit right after so this is not exactly strictly necessary, but
+that might change at some point and is good practise in any case.
+---
+ termux-api.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/termux-api.c b/termux-api.c
+index 9144b66afb86..0b9c9d751653 100644
+--- a/termux-api.c
++++ b/termux-api.c
+@@ -279,6 +279,8 @@ _Noreturn void exec_am_broadcast(int argc, char** argv,
+     // Use an a executable taking care of PATH and LD_LIBRARY_PATH:
+     execv(PREFIX "/bin/am", child_argv);
+ 
++    // We should not reach here, if we do, then free memory we malloc'ed
++    free(child_argv);
+     perror("execv(\"" PREFIX "/bin/am\")");
+     exit(1);
+ }
+-- 
+2.49.0
+
