@@ -3,10 +3,11 @@ TERMUX_PKG_DESCRIPTION="Secure shell for logging into a remote machine"
 TERMUX_PKG_LICENSE="BSD"
 TERMUX_PKG_MAINTAINER="Joshua Kahn @TomJo2000"
 TERMUX_PKG_VERSION="9.9p2"
+TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://github.com/openssh/openssh-portable/archive/refs/tags/V_$(sed 's/\./_/g; s/p/_P/g' <<< $TERMUX_PKG_VERSION).tar.gz
 TERMUX_PKG_SHA256=082dffcf651b9db762ddbe56ca25cc75a0355a7bea41960b47f3c139974c5e3e
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="krb5, ldns, libandroid-support, libedit, openssh-sftp-server, openssl, termux-auth, zlib"
+TERMUX_PKG_DEPENDS="krb5, ldns, libandroid-support, libedit, libfido2, openssh-sftp-server, openssl, termux-auth, zlib"
 TERMUX_PKG_CONFLICTS="dropbear"
 # --disable-strip to prevent host "install" command to use "-s", which won't work for target binaries:
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
@@ -24,6 +25,7 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --with-cflags=-Dfd_mask=int
 --with-ldns
 --with-libedit
+--with-security-key-builtin
 --with-mantype=man
 --without-ssh1
 --without-stackprotect
