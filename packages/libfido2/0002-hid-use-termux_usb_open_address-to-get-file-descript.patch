@@ -1,0 +1,78 @@
+From 186024f95200fbf77dd62f6e3e0eda253e008b7d Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <grimler@termux.dev>
+Date: Tue, 8 Apr 2025 18:26:15 +0200
+Subject: [PATCH] hid: use termux_usb_open_address to get file descriptor
+
+open directly will fail with permission denied on android.
+---
+ src/CMakeLists.txt | 6 ++++--
+ src/hid_hidapi.c   | 2 +-
+ src/hid_unix.c     | 8 +++++++-
+ 3 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 4c54198907c6..55f8ea3c93af 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -131,7 +131,8 @@ if(BUILD_STATIC_LIBS)
+ 	if(WIN32 AND NOT MINGW)
+ 		set_target_properties(fido2 PROPERTIES OUTPUT_NAME fido2_static)
+ 	endif()
+-	target_link_libraries(fido2 ${TARGET_LIBRARIES})
++	target_link_libraries(fido2 ${TARGET_LIBRARIES} termux-usb)
++	target_include_directories(fido2 PRIVATE @TERMUX_PREFIX@/include/libusb-1.0)
+ 	install(TARGETS fido2 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+ endif()
+@@ -141,7 +142,8 @@ if(BUILD_SHARED_LIBS)
+ 	add_library(fido2_shared SHARED ${FIDO_SOURCES} ${COMPAT_SOURCES})
+ 	set_target_properties(fido2_shared PROPERTIES OUTPUT_NAME fido2
+ 		VERSION ${FIDO_VERSION} SOVERSION ${FIDO_MAJOR})
+-	target_link_libraries(fido2_shared ${TARGET_LIBRARIES})
++	target_link_libraries(fido2_shared ${TARGET_LIBRARIES} termux-usb)
++	target_include_directories(fido2_shared PRIVATE @TERMUX_PREFIX@/include/libusb-1.0)
+ 	install(TARGETS fido2_shared
+ 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+diff --git a/src/hid_hidapi.c b/src/hid_hidapi.c
+index fed6f69a2237..4cf96a9bd21c 100644
+--- a/src/hid_hidapi.c
++++ b/src/hid_hidapi.c
+@@ -96,7 +96,7 @@ copy_info(fido_dev_info_t *di, const struct hid_device_info *d)
+ 	return 0;
+ }
+ 
+-#ifdef __linux__
++#if defined(__linux__) && !defined(__TERMUX__)
+ static int
+ get_report_descriptor(const char *path, struct hidraw_report_descriptor *hrd)
+ {
+diff --git a/src/hid_unix.c b/src/hid_unix.c
+index e53882d79e86..868368cc5c34 100644
+--- a/src/hid_unix.c
++++ b/src/hid_unix.c
+@@ -12,6 +12,8 @@
+ #include <poll.h>
+ #include <unistd.h>
+ 
++#include <termux-usb.h>
++
+ #include "fido.h"
+ 
+ #ifdef __NetBSD__
+@@ -24,7 +26,11 @@ fido_hid_unix_open(const char *path)
+ 	int fd;
+ 	struct stat st;
+ 
+-	if ((fd = open(path, O_RDWR)) == -1) {
++	/* String length should be less than 32 (/dev/bus/usb/001/001) */
++	char path2[32];
++	strncpy(path2, path, 31);
++	path2[31] = '\0';
++	if ((fd = (int) termux_usb_open_address(path2)) == -1) {
+ 		if (errno != ENOENT && errno != ENXIO)
+ 			fido_log_error(errno, "%s: open %s", __func__, path);
+ 		return (-1);
+-- 
+2.49.0
+
