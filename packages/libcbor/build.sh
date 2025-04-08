@@ -1,0 +1,12 @@
+TERMUX_PKG_HOMEPAGE=https://github.com/pjk/libcbor
+TERMUX_PKG_DESCRIPTION="C library for parsing and generating CBOR, the general-purpose schema-less binary data format"
+TERMUX_PKG_LICENSE="MIT"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION=0.12.0
+TERMUX_PKG_SRCURL=https://github.com/PJK/libcbor/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=5368add109db559f546d7ed10f440f39a273b073daa8da4abffc83815069fa7f
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+-DBUILD_SHARED_LIBS=ON
+-DWITH_EXAMPLES=OFF
+-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
+"
