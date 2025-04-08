@@ -1,0 +1,50 @@
+From 7441d1d583b554dced0232ed6a48bae62d0255fe Mon Sep 17 00:00:00 2001
+From: BlankEclair <blankeclair@disroot.org>
+Date: Sat, 5 Apr 2025 19:55:00 +1100
+Subject: [PATCH] explicit_bzero: use OPENSSL_cleanse() as a fallback
+
+Some systems don't supply bzero(), such as Termux. Since OPENSSL_cleanse()
+should have more of an assurance that memory is zeroed than bzero(), this
+commit replaces the latter with it instead.
+---
+ openbsd-compat/explicit_bzero.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/openbsd-compat/explicit_bzero.c b/openbsd-compat/explicit_bzero.c
+index ac64e69b4d18..6f606a2e9804 100644
+--- a/openbsd-compat/explicit_bzero.c
++++ b/openbsd-compat/explicit_bzero.c
+@@ -27,11 +27,7 @@ explicit_bzero(void *p, size_t n)
+ 
+ #else /* HAVE_MEMSET_S */
+ 
+-/*
+- * Indirect bzero through a volatile pointer to hopefully avoid
+- * dead-store optimisation eliminating the call.
+- */
+-static void (* volatile ssh_bzero)(void *, size_t) = bzero;
++#include <openssl/crypto.h>
+ 
+ void
+ explicit_bzero(void *p, size_t n)
+@@ -41,7 +37,7 @@ explicit_bzero(void *p, size_t n)
+ 	/*
+ 	 * clang -fsanitize=memory needs to intercept memset-like functions
+ 	 * to correctly detect memory initialisation. Make sure one is called
+-	 * directly since our indirection trick above successfully confuses it.
++	 * directly since clang may not detect it.
+ 	 */
+ #if defined(__has_feature)
+ # if __has_feature(memory_sanitizer)
+@@ -49,7 +45,7 @@ explicit_bzero(void *p, size_t n)
+ # endif
+ #endif
+ 
+-	ssh_bzero(p, n);
++	OPENSSL_cleanse(p, n);
+ }
+ 
+ #endif /* HAVE_MEMSET_S */
+-- 
+2.49.0
+
