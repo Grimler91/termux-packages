@@ -1,0 +1,32 @@
+From 0317c23d97210769c2d59da11ffa6acfaea2dfbb Mon Sep 17 00:00:00 2001
+From: Henrik Grimler <henrik@grimler.se>
+Date: Tue, 25 Mar 2025 14:16:01 +0100
+Subject: [PATCH 3/3] libusb: drop make_path call on android
+
+libusb_get_port_numbers, which make_path calls, does not work on
+wrap_sys_device-wrapped handles on android. hid_enumerate (see the
+preceding commit) sets cur_dev->path directly to the usbfs address
+plus a ":<N>" interface suffix so each HID interface of a composite
+device is uniquely addressable.
+
+Co-authored-by: Max Kapral <git@maxkapral.com>
+---
+ libusb/hid.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/libusb/hid.c b/libusb/hid.c
+index 63c440b..ef1f209 100644
+--- a/libusb/hid.c
++++ b/libusb/hid.c
+@@ -671,8 +671,6 @@ static struct hid_device_info * create_device_info_for_device(libusb_device *dev
+
+ 	cur_dev->bus_type = HID_API_BUS_USB;
+
+-	cur_dev->path = make_path(device, config_number, interface_num);
+-
+ 	if (!handle) {
+ 		return cur_dev;
+ 	}
+--
+2.54.0
+
